@@ -3,6 +3,7 @@
 Golang Sophie Client
 
 [![Build Status](https://travis-ci.org/baruwa-enterprise/sophie.svg?branch=master)](https://travis-ci.org/baruwa-enterprise/sophie)
+[![Go Report Card](https://goreportcard.com/badge/github.com/baruwa-enterprise/sophie)](https://goreportcard.com/report/github.com/baruwa-enterprise/sophie)
 [![GoDoc](https://godoc.org/github.com/baruwa-enterprise/sophie?status.svg)](https://godoc.org/github.com/baruwa-enterprise/sophie)
 [![MPLv2 License](https://img.shields.io/badge/license-MPLv2-blue.svg?style=flat-square)](https://www.mozilla.org/MPL/2.0/)
 
