@@ -8,3 +8,6 @@ Package main
 Sophie - Golang cmdline sophie client
 */
 package main
+
+func main() {
+}
