@@ -156,7 +156,7 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 		tc.StartResponse(id)
 		defer tc.EndResponse(id)
 
-		r, err = c.processResponse(tc)
+		r, err = c.processResponse(tc, p)
 	}
 
 	return
@@ -229,23 +229,28 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	tc.StartResponse(id)
 	defer tc.EndResponse(id)
 
-	r, err = c.processResponse(tc)
+	r, err = c.processResponse(tc, "")
 
 	return
 }
 
-func (c *Client) processResponse(tc *textproto.Conn) (r *Response, err error) {
+func (c *Client) processResponse(tc *textproto.Conn, p string) (r *Response, err error) {
 	var l string
 
 	if l, err = tc.ReadLine(); err != nil {
 		return
 	}
 
+	r = &Response{}
+	if p == "" {
+		r.Filename = "stream"
+	} else {
+		r.Filename = p
+	}
+
 	if strings.HasPrefix(l, "-1") {
 		err = fmt.Errorf("Unknown status")
 	} else if strings.HasPrefix(l, "1") || strings.HasPrefix(l, "0") {
-		r = &Response{}
-		r.Filename = "stream"
 		r.Raw = l
 		if strings.HasPrefix(l, "1") {
 			r.Signature = l[2:]
