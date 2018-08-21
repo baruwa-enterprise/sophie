@@ -4,7 +4,7 @@
 // You can obtain one at http://mozilla.org/MPL/2.0/.
 
 /*
-Package sophie
+Package sophie implements the sophie protocol
 Sophie - Golang Sophie protocol implementation
 */
 package sophie
