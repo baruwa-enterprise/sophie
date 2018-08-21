@@ -10,12 +10,18 @@ Sophie - Golang Sophie protocol implementation
 package sophie
 
 import (
+	"bytes"
 	"go/build"
 	"net"
 	"os"
 	"path"
+	"strings"
 	"testing"
 	"time"
+)
+
+const (
+	localSock = "/Users/andrew/sophie.sock"
 )
 
 func TestBasics(t *testing.T) {
@@ -124,6 +130,256 @@ func TestMethodsErrors(t *testing.T) {
 	} else {
 		if _, ok := e.(*net.OpError); !ok {
 			t.Errorf("Expected *net.OpError want %q", e)
+		}
+	}
+}
+
+func TestUnixScan(t *testing.T) {
+	address := os.Getenv("SOPHIE_UNIX_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e := os.Stat(address); !os.IsNotExist(e) {
+		c, e := NewClient("unix", address)
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = build.Default.GOPATH
+		}
+		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		s, e := c.Scan(fn)
+		if e == nil {
+			t.Errorf("An error should be returned: %s", e)
+		}
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, false)
+		}
+		fn = "/tmp/eicar.tar.bz2"
+		s, e = c.Scan(fn)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		}
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if !s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+		}
+		if s.Signature != "EICAR-AV-Test" {
+			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+		}
+	}
+}
+
+func TestTCPScan(t *testing.T) {
+	var e error
+	var c *Client
+	var s *Response
+
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e = os.Stat(address); !os.IsNotExist(e) {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = build.Default.GOPATH
+		}
+		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		s, e = c.Scan(fn)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		}
+		if s.Filename != "stream" {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, "stream")
+		}
+		if !s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+		}
+		if s.Signature != "EICAR-AV-Test" {
+			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+		}
+		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data")
+		s, e = c.Scan(fn)
+		if e == nil {
+			t.Errorf("An error should be returned: %s", e)
+		}
+		es := "Scanning directories not supported on a TCP connection"
+		if e.Error() != es {
+			t.Errorf("c.Scan(%q) returned error '%s' want '%s'", fn, e, es)
+		}
+	}
+}
+
+func TestTCPScanFileStream(t *testing.T) {
+	var e error
+	var c *Client
+	var s *Response
+
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e = os.Stat(address); !os.IsNotExist(e) {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = build.Default.GOPATH
+		}
+		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		f, e := os.Open(fn)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		} else {
+			defer f.Close()
+			s, e = c.ScanReader(f)
+			if e != nil {
+				t.Errorf("An error should not be returned: %s", e)
+			}
+			if s.Filename != "stream" {
+				t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, "stream")
+			}
+			if !s.Infected {
+				t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+			}
+			if s.Signature != "EICAR-AV-Test" {
+				t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+			}
+		}
+	}
+}
+
+func TestTCPScanBytesStream(t *testing.T) {
+	var e error
+	var c *Client
+	var s *Response
+
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e = os.Stat(address); !os.IsNotExist(e) {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		fn := "stream"
+		m := []byte(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		f := bytes.NewReader(m)
+		s, e = c.ScanReader(f)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		}
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if !s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+		}
+		if s.Signature != "EICAR-AV-Test" {
+			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+		}
+	}
+}
+
+func TestTCPScanBufferStream(t *testing.T) {
+	var e error
+	var c *Client
+	var s *Response
+
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e = os.Stat(address); !os.IsNotExist(e) {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		fn := "stream"
+		f := bytes.NewBufferString(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		s, e = c.ScanReader(f)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		}
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if !s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+		}
+		if s.Signature != "EICAR-AV-Test" {
+			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
+		}
+	}
+}
+
+func TestTCPScanStringStream(t *testing.T) {
+	var e error
+	var c *Client
+	var s *Response
+
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+	}
+
+	if _, e = os.Stat(address); !os.IsNotExist(e) {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		fn := "stream"
+		f := strings.NewReader(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		s, e = c.ScanReader(f)
+		if e != nil {
+			t.Errorf("An error should not be returned: %s", e)
+		}
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if !s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, true)
+		}
+		if s.Signature != "EICAR-AV-Test" {
+			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
 	}
 }
