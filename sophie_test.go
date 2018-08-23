@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	localSock = "/Users/andrew/sophie.sock"
+	localSock  = "/Users/andrew/sophie.sock"
+	eicarVirus = `X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`
 )
 
 func TestBasics(t *testing.T) {
@@ -289,7 +290,7 @@ func TestTCPScanBytesStream(t *testing.T) {
 			t.Errorf("An error should not be returned")
 		}
 		fn := "stream"
-		m := []byte(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		m := []byte(eicarVirus)
 		f := bytes.NewReader(m)
 		s, e = c.ScanReader(f)
 		if e != nil {
@@ -327,7 +328,7 @@ func TestTCPScanBufferStream(t *testing.T) {
 			t.Fatalf("An error should not be returned")
 		}
 		fn := "stream"
-		f := bytes.NewBufferString(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		f := bytes.NewBufferString(eicarVirus)
 		s, e = c.ScanReader(f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
@@ -364,7 +365,7 @@ func TestTCPScanStringStream(t *testing.T) {
 			t.Errorf("An error should not be returned")
 		}
 		fn := "stream"
-		f := strings.NewReader(`X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*`)
+		f := strings.NewReader(eicarVirus)
 		s, e = c.ScanReader(f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
