@@ -149,7 +149,7 @@ func TestUnixScan(t *testing.T) {
 		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
 		s, e := c.Scan(fn)
 		if e == nil {
-			t.Errorf("An error should be returned: %s", e)
+			t.Fatalf("An error should be returned")
 		}
 		if s.Filename != fn {
 			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
