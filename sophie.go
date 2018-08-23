@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	defaultTimeout = 15 * time.Second
-	defaultSleep   = 1 * time.Second
+	defaultSleep      = 1 * time.Second
+	defaultTimeout    = 15 * time.Second
+	defaultCmdTimeout = 1 * time.Minute
 )
 
 // Response is the response from the server
@@ -137,16 +138,13 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 			return
 		}
 
-		if c.cmdTimeout > 0 {
-			conn.SetDeadline(time.Now().Add(c.cmdTimeout))
-		}
-
 		tc = textproto.NewConn(conn)
 		defer tc.Close()
 
 		id = tc.Next()
 		tc.StartRequest(id)
 
+		conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 		if err = tc.PrintfLine("%s", p); err != nil {
 			tc.EndRequest(id)
 			return
@@ -156,6 +154,7 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 		tc.StartResponse(id)
 		defer tc.EndResponse(id)
 
+		conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 		r, err = c.processResponse(tc, p)
 	}
 
@@ -173,10 +172,6 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	conn, err = c.dial()
 	if err != nil {
 		return
-	}
-
-	if c.cmdTimeout > 0 {
-		conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	}
 
 	tc = textproto.NewConn(conn)
@@ -203,11 +198,13 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	id = tc.Next()
 	tc.StartRequest(id)
 
+	conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if err = tc.PrintfLine("stream/%d", clen); err != nil {
 		tc.EndRequest(id)
 		return
 	}
 
+	conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if l, err = tc.ReadLine(); err != nil {
 		tc.EndRequest(id)
 		return
@@ -219,6 +216,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 		return
 	}
 
+	conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	if _, err = io.Copy(tc.Writer.W, i); err != nil {
 		tc.EndRequest(id)
 		return
@@ -229,6 +227,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	tc.StartResponse(id)
 	defer tc.EndResponse(id)
 
+	conn.SetDeadline(time.Now().Add(c.cmdTimeout))
 	r, err = c.processResponse(tc, "")
 
 	return
@@ -287,6 +286,7 @@ func NewClient(network, address string) (c *Client, err error) {
 		address:     address,
 		connTimeout: defaultTimeout,
 		connSleep:   defaultSleep,
+		cmdTimeout:  defaultCmdTimeout,
 	}
 	return
 }
