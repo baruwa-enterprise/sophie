@@ -256,6 +256,8 @@ func (c *Client) processResponse(tc *textproto.Conn, p string) (r *Response, err
 			r.Signature = l[2:]
 			r.Infected = true
 		}
+	} else {
+		err = fmt.Errorf("Invalid Server Response: %s", l)
 	}
 
 	return
