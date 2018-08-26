@@ -152,12 +152,12 @@ func TestUnixScan(t *testing.T) {
 		if e == nil {
 			t.Fatalf("An error should be returned")
 		}
-		// if s.Filename != fn {
-		// 	t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
-		// }
-		// if s.Infected {
-		// 	t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, false)
-		// }
+		if s.Filename != fn {
+			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
+		}
+		if s.Infected {
+			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, false)
+		}
 		fn = "/tmp/eicar.tar.bz2"
 		s, e = c.Scan(fn)
 		if e != nil {
