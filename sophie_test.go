@@ -180,12 +180,16 @@ func TestTCPScan(t *testing.T) {
 	var c *Client
 	var s *Response
 
+	skip := false
 	address := os.Getenv("SOPHIE_TCP_ADDRESS")
 	if address == "" {
 		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
 	}
 
-	if _, e = os.Stat(address); !os.IsNotExist(e) {
+	if !skip {
 		if address == localSock {
 			c, e = NewClient("tcp4", "192.168.1.126:4010")
 		} else {
@@ -229,12 +233,16 @@ func TestTCPScanFileStream(t *testing.T) {
 	var c *Client
 	var s *Response
 
+	skip := false
 	address := os.Getenv("SOPHIE_TCP_ADDRESS")
 	if address == "" {
 		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
 	}
 
-	if _, e = os.Stat(address); !os.IsNotExist(e) {
+	if !skip {
 		if address == localSock {
 			c, e = NewClient("tcp4", "192.168.1.126:4010")
 		} else {
@@ -275,12 +283,16 @@ func TestTCPScanBytesStream(t *testing.T) {
 	var c *Client
 	var s *Response
 
+	skip := false
 	address := os.Getenv("SOPHIE_TCP_ADDRESS")
 	if address == "" {
 		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
 	}
 
-	if _, e = os.Stat(address); !os.IsNotExist(e) {
+	if !skip {
 		if address == localSock {
 			c, e = NewClient("tcp4", "192.168.1.126:4010")
 		} else {
@@ -313,12 +325,16 @@ func TestTCPScanBufferStream(t *testing.T) {
 	var c *Client
 	var s *Response
 
+	skip := false
 	address := os.Getenv("SOPHIE_TCP_ADDRESS")
 	if address == "" {
 		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
 	}
 
-	if _, e = os.Stat(address); !os.IsNotExist(e) {
+	if !skip {
 		if address == localSock {
 			c, e = NewClient("tcp4", "192.168.1.126:4010")
 		} else {
@@ -350,12 +366,16 @@ func TestTCPScanStringStream(t *testing.T) {
 	var c *Client
 	var s *Response
 
+	skip := false
 	address := os.Getenv("SOPHIE_TCP_ADDRESS")
 	if address == "" {
 		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
 	}
 
-	if _, e = os.Stat(address); !os.IsNotExist(e) {
+	if !skip {
 		if address == localSock {
 			c, e = NewClient("tcp4", "192.168.1.126:4010")
 		} else {
