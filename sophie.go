@@ -24,6 +24,7 @@ const (
 	defaultSleep      = 1 * time.Second
 	defaultTimeout    = 15 * time.Second
 	defaultCmdTimeout = 1 * time.Minute
+	defaultSock       = "/var/lib/savdid/savdid.sock"
 )
 
 // Response is the response from the server
@@ -266,7 +267,7 @@ func (c *Client) processResponse(tc *textproto.Conn, p string) (r *Response, err
 func NewClient(network, address string) (c *Client, err error) {
 	if network == "" && address == "" {
 		network = "unix"
-		address = "/var/lib/savdid/savdid.sock"
+		address = defaultSock
 	}
 
 	if network != "unix" && network != "unixpacket" && network != "tcp" && network != "tcp4" && network != "tcp6" {
