@@ -11,6 +11,7 @@ package sophie
 
 import (
 	"bytes"
+	"fmt"
 	"go/build"
 	"net"
 	"os"
@@ -28,11 +29,12 @@ const (
 func TestBasics(t *testing.T) {
 	var expected string
 	// Test Non existent socket
-	_, e := NewClient("unix", "/tmp/.dumx.sock")
+	sockname := "/tmp/.dumx.sock"
+	_, e := NewClient("unix", sockname)
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
-	expected = "The unix socket: /tmp/.dumx.sock does not exist"
+	expected = fmt.Sprintf(unixSockErr, sockname)
 	if e.Error() != expected {
 		t.Errorf("Expected %q want %q", expected, e)
 	}
@@ -41,7 +43,7 @@ func TestBasics(t *testing.T) {
 	if e == nil {
 		t.Fatalf("An error should be returned as sock does not exist")
 	}
-	expected = "The unix socket: /var/lib/savdid/savdid.sock does not exist"
+	expected = fmt.Sprintf(unixSockErr, defaultSock)
 	if e.Error() != expected {
 		t.Errorf("Got %q want %q", expected, e)
 	}

@@ -21,10 +21,16 @@ import (
 )
 
 const (
-	defaultSleep      = 1 * time.Second
-	defaultTimeout    = 15 * time.Second
-	defaultCmdTimeout = 1 * time.Minute
-	defaultSock       = "/var/lib/savdid/savdid.sock"
+	defaultSleep        = 1 * time.Second
+	defaultTimeout      = 15 * time.Second
+	defaultCmdTimeout   = 1 * time.Minute
+	defaultSock         = "/var/lib/savdid/savdid.sock"
+	invalidRespErr      = "Invalid server response: %s"
+	unsupportedProtoErr = "Protocol: %s is not supported"
+	unixSockErr         = "The unix socket: %s does not exist"
+	unknownStatusErr    = "Unknown status"
+	noSizeErr           = "The content length could not be determined"
+	tcpDirErr           = "Scanning directories not supported on a TCP connection"
 )
 
 // Response is the response from the server
@@ -121,7 +127,7 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 	if c.network != "unix" && c.network != "unixpacket" {
 		isTCP = true
 		if stat.IsDir() {
-			err = fmt.Errorf("Scanning directories not supported on a TCP connection")
+			err = fmt.Errorf(tcpDirErr)
 			return
 		}
 	}
@@ -192,7 +198,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 		}
 		clen = stat.Size()
 	default:
-		err = fmt.Errorf("The content length could not be determined")
+		err = fmt.Errorf(noSizeErr)
 		return
 	}
 
@@ -212,7 +218,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	}
 
 	if l != "OK" {
-		err = fmt.Errorf("Invalid Server Response: %s", l)
+		err = fmt.Errorf(invalidRespErr, l)
 		tc.EndRequest(id)
 		return
 	}
@@ -249,7 +255,7 @@ func (c *Client) processResponse(tc *textproto.Conn, p string) (r *Response, err
 	}
 
 	if strings.HasPrefix(l, "-1") {
-		err = fmt.Errorf("Unknown status")
+		err = fmt.Errorf(unknownStatusErr)
 	} else if strings.HasPrefix(l, "1") || strings.HasPrefix(l, "0") {
 		r.Raw = l
 		if strings.HasPrefix(l, "1") {
@@ -257,7 +263,7 @@ func (c *Client) processResponse(tc *textproto.Conn, p string) (r *Response, err
 			r.Infected = true
 		}
 	} else {
-		err = fmt.Errorf("Invalid Server Response: %s", l)
+		err = fmt.Errorf(invalidRespErr, l)
 	}
 
 	return
@@ -271,13 +277,13 @@ func NewClient(network, address string) (c *Client, err error) {
 	}
 
 	if network != "unix" && network != "unixpacket" && network != "tcp" && network != "tcp4" && network != "tcp6" {
-		err = fmt.Errorf("Protocol: %s is not supported", network)
+		err = fmt.Errorf(unsupportedProtoErr, network)
 		return
 	}
 
 	if network == "unix" || network == "unixpacket" {
 		if _, err = os.Stat(address); os.IsNotExist(err) {
-			err = fmt.Errorf("The unix socket: %s does not exist", address)
+			err = fmt.Errorf(unixSockErr, address)
 			return
 		}
 	}
