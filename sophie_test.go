@@ -11,6 +11,7 @@ package sophie
 
 import (
 	"bytes"
+	"compress/bzip2"
 	"fmt"
 	"go/build"
 	"net"
@@ -151,8 +152,8 @@ func TestUnixScan(t *testing.T) {
 		}
 		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
 		s, e := c.Scan(fn)
-		if e == nil {
-			t.Fatalf("An error should be returned")
+		if e != nil {
+			t.Fatalf("An error should not be returned: %s", e)
 		}
 		if s.Filename != fn {
 			t.Errorf("c.Scan(%q) = %q, want %q", fn, s.Filename, fn)
@@ -174,6 +175,8 @@ func TestUnixScan(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_UNIX_ADDRESS not set")
 	}
 }
 
@@ -221,12 +224,68 @@ func TestTCPScan(t *testing.T) {
 		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data")
 		s, e = c.Scan(fn)
 		if e == nil {
-			t.Errorf("An error should be returned: %s", e)
+			t.Fatal("An error should be returned")
 		}
-		es := "Scanning directories not supported on a TCP connection"
-		if e.Error() != es {
-			t.Errorf("c.Scan(%q) returned error '%s' want '%s'", fn, e, es)
+		if e.Error() != tcpDirErr {
+			t.Errorf("c.Scan(%q) returned error '%s' want '%s'", fn, e, tcpDirErr)
 		}
+		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/noexist.txt")
+		s, e = c.Scan(fn)
+		if e == nil {
+			t.Fatal("An error should be returned")
+		}
+		if !os.IsNotExist(e) {
+			t.Errorf("Expected os.IsNotExist error got %s", e)
+		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
+	}
+}
+
+func TestTCPScanStreamError(t *testing.T) {
+	var e error
+	var c *Client
+
+	skip := false
+	address := os.Getenv("SOPHIE_TCP_ADDRESS")
+	if address == "" {
+		address = localSock
+		if _, e = os.Stat(address); os.IsNotExist(e) {
+			skip = true
+		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
+	}
+
+	if !skip {
+		if address == localSock {
+			c, e = NewClient("tcp4", "192.168.1.126:4010")
+		} else {
+			c, e = NewClient("tcp", address)
+		}
+		if e != nil {
+			t.Errorf("An error should not be returned")
+		}
+		gopath := os.Getenv("GOPATH")
+		if gopath == "" {
+			gopath = build.Default.GOPATH
+		}
+		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.tar.bz2")
+		f, e := os.Open(fn)
+		if e != nil {
+			t.Fatalf("An error should not be returned: %s", e)
+		}
+		defer f.Close()
+		ir := bzip2.NewReader(f)
+		_, e = c.ScanReader(ir)
+		if e == nil {
+			t.Fatal("An error should be returned")
+		}
+		if e.Error() != noSizeErr {
+			t.Errorf("Got %s want %s", e, noSizeErr)
+		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 }
 
@@ -242,6 +301,8 @@ func TestTCPScanFileStream(t *testing.T) {
 		if _, e = os.Stat(address); os.IsNotExist(e) {
 			skip = true
 		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 
 	if !skip {
@@ -277,6 +338,8 @@ func TestTCPScanFileStream(t *testing.T) {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
 
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 }
 
@@ -319,6 +382,8 @@ func TestTCPScanBytesStream(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 }
 
@@ -360,6 +425,8 @@ func TestTCPScanBufferStream(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 }
 
@@ -401,5 +468,7 @@ func TestTCPScanStringStream(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
+	} else {
+		t.Skip("skipping test; $SOPHIE_TCP_ADDRESS not set")
 	}
 }
