@@ -38,7 +38,7 @@ $ ./bin/sophiescan
 To install the library
 
 ```console
-go get get github.com/baruwa-enterprise/sophie
+go get github.com/baruwa-enterprise/sophie
 ```
 
 You can then import it in your code
