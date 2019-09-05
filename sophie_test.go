@@ -13,10 +13,8 @@ import (
 	"bytes"
 	"compress/bzip2"
 	"fmt"
-	"go/build"
 	"net"
 	"os"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -121,11 +119,7 @@ func TestMethodsErrors(t *testing.T) {
 		t.Errorf("An error should not be returned")
 	}
 	c.SetConnTimeout(500 * time.Microsecond)
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		gopath = build.Default.GOPATH
-	}
-	fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+	fn := "./examples/data/eicar.txt"
 	if _, e = c.Scan(fn); e == nil {
 		t.Fatalf("An error should be returned")
 	}
@@ -146,11 +140,7 @@ func TestUnixScan(t *testing.T) {
 		if e != nil {
 			t.Errorf("An error should not be returned")
 		}
-		gopath := os.Getenv("GOPATH")
-		if gopath == "" {
-			gopath = build.Default.GOPATH
-		}
-		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		fn := "./examples/data/eicar.txt"
 		s, e := c.Scan(fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
@@ -203,11 +193,7 @@ func TestTCPScan(t *testing.T) {
 		if e != nil {
 			t.Errorf("An error should not be returned")
 		}
-		gopath := os.Getenv("GOPATH")
-		if gopath == "" {
-			gopath = build.Default.GOPATH
-		}
-		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		fn := "./examples/data/eicar.txt"
 		s, e = c.Scan(fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
@@ -221,7 +207,7 @@ func TestTCPScan(t *testing.T) {
 		if s.Signature != "EICAR-AV-Test" {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
-		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data")
+		fn = "./examples/data"
 		s, e = c.Scan(fn)
 		if e == nil {
 			t.Fatal("An error should be returned")
@@ -229,7 +215,7 @@ func TestTCPScan(t *testing.T) {
 		if e.Error() != tcpDirErr {
 			t.Errorf("c.Scan(%q) returned error '%s' want '%s'", fn, e, tcpDirErr)
 		}
-		fn = path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/noexist.txt")
+		fn = "./examples/data/noexist.txt"
 		s, e = c.Scan(fn)
 		if e == nil {
 			t.Fatal("An error should be returned")
@@ -266,11 +252,7 @@ func TestTCPScanStreamError(t *testing.T) {
 		if e != nil {
 			t.Errorf("An error should not be returned")
 		}
-		gopath := os.Getenv("GOPATH")
-		if gopath == "" {
-			gopath = build.Default.GOPATH
-		}
-		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.tar.bz2")
+		fn := "./examples/data/eicar.tar.bz2"
 		f, e := os.Open(fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
@@ -314,11 +296,7 @@ func TestTCPScanFileStream(t *testing.T) {
 		if e != nil {
 			t.Errorf("An error should not be returned")
 		}
-		gopath := os.Getenv("GOPATH")
-		if gopath == "" {
-			gopath = build.Default.GOPATH
-		}
-		fn := path.Join(gopath, "src/github.com/baruwa-enterprise/sophie/examples/data/eicar.txt")
+		fn := "./examples/data/eicar.txt"
 		f, e := os.Open(fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
