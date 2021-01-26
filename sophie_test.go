@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andrew Colin Kissa <andrew@datopdog.io>
+// Copyright (C) 2018-2021 Andrew Colin Kissa <andrew@datopdog.io>
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -12,6 +12,7 @@ package sophie
 import (
 	"bytes"
 	"compress/bzip2"
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -120,7 +121,8 @@ func TestMethodsErrors(t *testing.T) {
 	}
 	c.SetConnTimeout(500 * time.Microsecond)
 	fn := "./examples/data/eicar.txt"
-	if _, e = c.Scan(fn); e == nil {
+	ctx := context.Background()
+	if _, e = c.Scan(ctx, fn); e == nil {
 		t.Fatalf("An error should be returned")
 	}
 	if _, ok := e.(*net.OpError); !ok {
@@ -141,7 +143,8 @@ func TestUnixScan(t *testing.T) {
 			t.Errorf("An error should not be returned")
 		}
 		fn := "./examples/data/eicar.txt"
-		s, e := c.Scan(fn)
+		ctx := context.Background()
+		s, e := c.Scan(ctx, fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -152,7 +155,7 @@ func TestUnixScan(t *testing.T) {
 			t.Errorf("c.Scan(%q).Infected = %t, want %t", fn, s.Infected, false)
 		}
 		fn = "/tmp/eicar.tar.bz2"
-		s, e = c.Scan(fn)
+		s, e = c.Scan(ctx, fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -194,7 +197,8 @@ func TestTCPScan(t *testing.T) {
 			t.Errorf("An error should not be returned")
 		}
 		fn := "./examples/data/eicar.txt"
-		s, e = c.Scan(fn)
+		ctx := context.Background()
+		s, e = c.Scan(ctx, fn)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -208,7 +212,7 @@ func TestTCPScan(t *testing.T) {
 			t.Errorf("c.Scan(%q).Signature = %s, want %s", fn, s.Signature, "EICAR-AV-Test")
 		}
 		fn = "./examples/data"
-		s, e = c.Scan(fn)
+		s, e = c.Scan(ctx, fn)
 		if e == nil {
 			t.Fatal("An error should be returned")
 		}
@@ -216,7 +220,7 @@ func TestTCPScan(t *testing.T) {
 			t.Errorf("c.Scan(%q) returned error '%s' want '%s'", fn, e, tcpDirErr)
 		}
 		fn = "./examples/data/noexist.txt"
-		s, e = c.Scan(fn)
+		s, e = c.Scan(ctx, fn)
 		if e == nil {
 			t.Fatal("An error should be returned")
 		}
@@ -259,7 +263,8 @@ func TestTCPScanStreamError(t *testing.T) {
 		}
 		defer f.Close()
 		ir := bzip2.NewReader(f)
-		_, e = c.ScanReader(ir)
+		ctx := context.Background()
+		_, e = c.ScanReader(ctx, ir)
 		if e == nil {
 			t.Fatal("An error should be returned")
 		}
@@ -302,7 +307,8 @@ func TestTCPScanFileStream(t *testing.T) {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
 		defer f.Close()
-		s, e = c.ScanReader(f)
+		ctx := context.Background()
+		s, e = c.ScanReader(ctx, f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -347,7 +353,8 @@ func TestTCPScanBytesStream(t *testing.T) {
 		fn := "stream"
 		m := []byte(eicarVirus)
 		f := bytes.NewReader(m)
-		s, e = c.ScanReader(f)
+		ctx := context.Background()
+		s, e = c.ScanReader(ctx, f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -390,7 +397,8 @@ func TestTCPScanBufferStream(t *testing.T) {
 		}
 		fn := "stream"
 		f := bytes.NewBufferString(eicarVirus)
-		s, e = c.ScanReader(f)
+		ctx := context.Background()
+		s, e = c.ScanReader(ctx, f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}
@@ -433,7 +441,8 @@ func TestTCPScanStringStream(t *testing.T) {
 		}
 		fn := "stream"
 		f := strings.NewReader(eicarVirus)
-		s, e = c.ScanReader(f)
+		ctx := context.Background()
+		s, e = c.ScanReader(ctx, f)
 		if e != nil {
 			t.Fatalf("An error should not be returned: %s", e)
 		}

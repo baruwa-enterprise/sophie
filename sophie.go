@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Andrew Colin Kissa <andrew@datopdog.io>
+// Copyright (C) 2018-2021 Andrew Colin Kissa <andrew@datopdog.io>
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -11,6 +11,7 @@ package sophie
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -77,8 +78,8 @@ func (c *Client) SetConnSleep(s time.Duration) {
 }
 
 // Scan a file or directory
-func (c *Client) Scan(p string) (r *Response, err error) {
-	r, err = c.fileCmd(p)
+func (c *Client) Scan(ctx context.Context, p string) (r *Response, err error) {
+	r, err = c.fileCmd(ctx, p)
 	return
 }
 
@@ -89,12 +90,12 @@ func (c *Client) Scan(p string) (r *Response, err error) {
 // }
 
 // ScanReader scans an io.reader
-func (c *Client) ScanReader(i io.Reader) (r *Response, err error) {
-	r, err = c.readerCmd(i)
+func (c *Client) ScanReader(ctx context.Context, i io.Reader) (r *Response, err error) {
+	r, err = c.readerCmd(ctx, i)
 	return
 }
 
-func (c *Client) dial() (conn net.Conn, err error) {
+func (c *Client) dial(ctx context.Context) (conn net.Conn, err error) {
 	d := &net.Dialer{}
 
 	if c.connTimeout > 0 {
@@ -102,7 +103,7 @@ func (c *Client) dial() (conn net.Conn, err error) {
 	}
 
 	for i := 0; i <= c.connRetries; i++ {
-		conn, err = d.Dial(c.network, c.address)
+		conn, err = d.DialContext(ctx, c.network, c.address)
 		if e, ok := err.(net.Error); ok && e.Timeout() {
 			time.Sleep(c.connSleep)
 			continue
@@ -112,7 +113,7 @@ func (c *Client) dial() (conn net.Conn, err error) {
 	return
 }
 
-func (c *Client) fileCmd(p string) (r *Response, err error) {
+func (c *Client) fileCmd(ctx context.Context, p string) (r *Response, err error) {
 	var id uint
 	var isTCP bool
 	var f *os.File
@@ -138,9 +139,9 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 		}
 		defer f.Close()
 
-		r, err = c.readerCmd(f)
+		r, err = c.readerCmd(ctx, f)
 	} else {
-		conn, err = c.dial()
+		conn, err = c.dial(ctx)
 		if err != nil {
 			return
 		}
@@ -168,7 +169,7 @@ func (c *Client) fileCmd(p string) (r *Response, err error) {
 	return
 }
 
-func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
+func (c *Client) readerCmd(ctx context.Context, i io.Reader) (r *Response, err error) {
 	var id uint
 	var l string
 	var clen int64
@@ -176,7 +177,7 @@ func (c *Client) readerCmd(i io.Reader) (r *Response, err error) {
 	var stat os.FileInfo
 	var tc *textproto.Conn
 
-	conn, err = c.dial()
+	conn, err = c.dial(ctx)
 	if err != nil {
 		return
 	}
