@@ -10,7 +10,6 @@ Sophie - Golang Sophie protocol implementation
 package sophie
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -33,6 +32,10 @@ const (
 	noSizeErr           = "The content length could not be determined"
 	tcpDirErr           = "Scanning directories not supported on a TCP connection"
 )
+
+type readerWithLen interface {
+	Len() int
+}
 
 // Response is the response from the server
 type Response struct {
@@ -192,11 +195,7 @@ func (c *Client) readerCmd(ctx context.Context, i io.Reader) (r *Response, err e
 	defer tc.Close()
 
 	switch v := i.(type) {
-	case *bytes.Buffer:
-		clen = int64(v.Len())
-	case *bytes.Reader:
-		clen = int64(v.Len())
-	case *strings.Reader:
+	case readerWithLen:
 		clen = int64(v.Len())
 	case *os.File:
 		stat, err = v.Stat()
